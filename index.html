@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>애착유형 테스트</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+    background: #fbf7f2;
+    color: #2f2f2f;
+    line-height: 1.6;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px 56px;
+  }
+  .hero {
+    background: #fff;
+    border-radius: 22px;
+    padding: 28px 22px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.06);
+    margin-bottom: 18px;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 30px;
+    letter-spacing: -0.5px;
+  }
+  .sub {
+    color: #666;
+    margin: 0;
+    font-size: 15px;
+  }
+  .scale {
+    margin-top: 18px;
+    background: #f5efe8;
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+  .question {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px 16px;
+    margin: 12px 0;
+    box-shadow: 0 6px 18px rgba(0,0,0,.04);
+  }
+  .qtext {
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .choices {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+  }
+  .choice input { display: none; }
+  .choice label {
+    display: block;
+    text-align: center;
+    padding: 10px 4px;
+    border-radius: 12px;
+    border: 1px solid #ddd5cc;
+    background: #fffdf9;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .choice input:checked + label {
+    background: #dfeee7;
+    border-color: #9bbfae;
+    font-weight: 700;
+  }
+  .btn {
+    width: 100%;
+    border: 0;
+    border-radius: 14px;
+    padding: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    background: #5e8f78;
+    color: white;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  .btn:hover { opacity: .95; }
+  #result {
+    display: none;
+    margin-top: 22px;
+    background: #fff;
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.06);
+  }
+  .scores {
+    display: grid;
+    grid-template-columns: repeat(3,1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .scorebox {
+    padding: 14px 10px;
+    border-radius: 14px;
+    text-align: center;
+    background: #f8f4ef;
+  }
+  .scorebox strong {
+    display: block;
+    font-size: 22px;
+    margin-top: 4px;
+  }
+  .type {
+    font-size: 24px;
+    font-weight: 900;
+    margin: 10px 0 6px;
+  }
+  .note {
+    margin-top: 14px;
+    font-size: 13px;
+    color: #777;
+  }
+  .error {
+    color: #b14c4c;
+    font-weight: 700;
+    margin-top: 12px;
+    display: none;
+  }
+  @media (max-width: 520px) {
+    h1 { font-size: 26px; }
+    .choices { gap: 5px; }
+    .choice label { font-size: 12px; padding: 9px 1px; }
+    .scores { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1>애착유형 테스트</h1>
+    <p class="sub">나는 사랑할 때 어떤 관계 스타일일까요? 12문항으로 가볍게 확인해보세요.</p>
+    <div class="scale">
+      전혀 아니다 1점 · 별로 아니다 2점 · 보통이다 3점 · 그렇다 4점 · 매우 그렇다 5점
+    </div>
+  </section>
+
+  <form id="testForm">
+    <div id="questions"></div>
+    <div id="error" class="error">모든 문항에 답해주세요.</div>
+    <button type="button" class="btn" onclick="calculateResult()">내 애착유형 결과보기</button>
+  </form>
+
+  <section id="result">
+    <h2>나의 결과</h2>
+    <div class="scores">
+      <div class="scorebox">안정 성향<strong id="secureScore">0</strong></div>
+      <div class="scorebox">불안 성향<strong id="anxiousScore">0</strong></div>
+      <div class="scorebox">회피 성향<strong id="avoidantScore">0</strong></div>
+    </div>
+    <div class="type" id="typeName"></div>
+    <p id="typeDesc"></p>
+    <p class="note">※ 이 테스트는 자기이해를 위한 간이 자료이며 전문적인 심리검사나 진단을 대신하지 않습니다.</p>
+  </section>
+</div>
+
+<script>
+const questions = [
+  "가까운 사람에게 내 감정을 비교적 편하게 표현한다.",
+  "상대가 나를 떠날까 봐 걱정하는 편이다.",
+  "누군가와 너무 가까워지면 부담스럽게 느껴진다.",
+  "힘든 일이 있을 때 가까운 사람에게 도움을 청할 수 있다.",
+  "연락이 늦어지면 나를 싫어하게 된 건 아닌지 신경 쓰인다.",
+  "다른 사람에게 의지하기보다 혼자 해결하는 것이 편하다.",
+  "의견이 달라도 관계가 쉽게 깨지지는 않을 거라고 생각한다.",
+  "상대의 말투나 표정이 조금만 달라져도 불안해진다.",
+  "속마음을 이야기하는 것이 불편할 때가 많다.",
+  "가까운 사람을 믿고 의지하는 것이 비교적 자연스럽다.",
+  "상대에게 사랑받고 있는지 자주 확인하고 싶어진다.",
+  "관계에서 일정한 거리를 유지해야 마음이 편하다."
+];
+
+const qWrap = document.getElementById("questions");
+questions.forEach((q, idx) => {
+  const num = idx + 1;
+  const box = document.createElement("div");
+  box.className = "question";
+  box.innerHTML = `
+    <div class="qtext">${num}. ${q}</div>
+    <div class="choices">
+      ${[1,2,3,4,5].map(v => `
+        <div class="choice">
+          <input type="radio" id="q${num}_${v}" name="q${num}" value="${v}">
+          <label for="q${num}_${v}">${v}점</label>
+        </div>
+      `).join("")}
+    </div>`;
+  qWrap.appendChild(box);
+});
+
+function calculateResult() {
+  let answers = [];
+  for (let i = 1; i <= 12; i++) {
+    const checked = document.querySelector(`input[name="q${i}"]:checked`);
+    if (!checked) {
+      document.getElementById("error").style.display = "block";
+      document.getElementById("result").style.display = "none";
+      return;
+    }
+    answers.push(Number(checked.value));
+  }
+  document.getElementById("error").style.display = "none";
+
+  const secure = answers[0] + answers[3] + answers[6] + answers[9];
+  const anxious = answers[1] + answers[4] + answers[7] + answers[10];
+  const avoidant = answers[2] + answers[5] + answers[8] + answers[11];
+
+  document.getElementById("secureScore").textContent = secure + "점";
+  document.getElementById("anxiousScore").textContent = anxious + "점";
+  document.getElementById("avoidantScore").textContent = avoidant + "점";
+
+  let name = "";
+  let desc = "";
+
+  const max = Math.max(secure, anxious, avoidant);
+  const high = [secure, anxious, avoidant].filter(v => v >= 15).length;
+
+  if (anxious >= 15 && avoidant >= 15) {
+    name = "불안·회피 혼합형";
+    desc = "가까워지고 싶은 마음과 거리를 두고 싶은 마음이 함께 나타날 수 있어요. 상대의 반응에 민감하면서도 상처받을까 봐 스스로 거리를 두는 경향이 있을 수 있습니다.";
+  } else if (secure === max && (secure > anxious || secure > avoidant)) {
+    name = "안정형";
+    desc = "친밀함과 독립성 사이의 균형을 비교적 잘 유지하는 편이에요. 갈등이 생겨도 대화를 통해 해결하려는 경향이 있고, 자신과 상대를 비교적 편안하게 신뢰하는 편입니다.";
+  } else if (anxious === max && anxious > avoidant) {
+    name = "불안형";
+    desc = "관계를 소중하게 여기는 만큼 상대의 반응이나 거리 변화에 민감할 수 있어요. 연락이 늦거나 평소와 다른 반응을 보이면 사랑받고 있는지 확인하고 싶은 마음이 커질 수 있습니다.";
+  } else if (avoidant === max && avoidant > anxious) {
+    name = "회피형";
+    desc = "지나친 친밀감이나 의존을 부담스럽게 느끼고 혼자 해결하는 것이 편할 수 있어요. 감정을 드러내기보다 일정한 거리를 유지할 때 마음이 편해지는 경향이 있습니다.";
+  } else {
+    name = "혼합 성향";
+    desc = "두 가지 이상의 성향이 비슷하게 나타났어요. 애착유형은 사람을 하나의 유형으로 고정하는 것이 아니라, 관계와 상황에 따라 달라질 수 있는 경향으로 보는 것이 좋습니다.";
+  }
+
+  document.getElementById("typeName").textContent = name;
+  document.getElementById("typeDesc").textContent = desc;
+  document.getElementById("result").style.display = "block";
+  document.getElementById("result").scrollIntoView({ behavior: "smooth" });
+}
+</script>
+</body>
+</html>
